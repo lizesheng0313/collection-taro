@@ -56,9 +56,6 @@
               <text class="stat-icon">📖</text>
               <text class="stat-value">{{ project.read_count || 0 }}</text>
             </view>
-            <view class="stat-item" v-if="project.programming_language || project.github_info?.language">
-              <text class="stat-value">{{ project.programming_language || project.github_info?.language }}</text>
-            </view>
           </view>
           
           <view class="project-tags" v-if="getTopics(project).length">
@@ -69,6 +66,11 @@
             >
               {{ topic }}
             </text>
+          </view>
+
+          <!-- 时间信息 -->
+          <view class="project-time">
+            <text class="time-text">{{ formatDate(project.collect_time) }}</text>
           </view>
         </view>
       </view>
@@ -173,6 +175,20 @@ const formatNumber = (num: number) => {
     return (num / 1000).toFixed(1) + 'k'
   }
   return num.toString()
+}
+
+// 格式化日期 - 简单的年月日格式
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '未知时间'
+
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return '时间格式错误'
+
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
 }
 
 onMounted(() => {
@@ -287,13 +303,24 @@ onMounted(() => {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    
+
     .tag {
       background: #e6f3ff;
       color: #007aff;
       padding: 8px 16px;
       border-radius: 20px;
       font-size: 22px;
+    }
+  }
+
+  .project-time {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
+
+    .time-text {
+      font-size: 22px;
+      color: #999;
     }
   }
 }

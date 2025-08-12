@@ -29,9 +29,6 @@
               <text class="stat-icon">📖</text>
               <text class="stat-value">{{ article.read_count || 0 }}</text>
             </view>
-            <view class="stat-item" v-if="article.programming_language || article.github_info?.language">
-              <text class="stat-value">{{ article.programming_language || article.github_info?.language }}</text>
-            </view>
             <view class="stat-item" v-if="article.overall_score">
               <text class="stat-icon">📊</text>
               <text class="stat-value">{{ article.overall_score }}/10</text>
@@ -76,13 +73,9 @@
           </view>
 
           <!-- 技术信息 -->
-          <view v-if="article.programming_language || article.github_url" class="intro-section">
+          <view v-if="article.github_url" class="intro-section">
             <view class="section-title">🔧 技术信息</view>
             <view class="section-content">
-              <view v-if="article.programming_language" class="tech-item">
-                <text class="tech-label">编程语言：</text>
-                <text class="tech-value">{{ article.programming_language }}</text>
-              </view>
               <view v-if="article.github_url" class="tech-item">
                 <text class="tech-label">项目地址：</text>
                 <text class="tech-value tech-link" @tap="openGitHub">{{ article.github_url }}</text>
@@ -170,13 +163,6 @@
       <!-- 文章内容 -->
       <view v-if="article.article_type !== 'github_project'" class="article-body">
         <rich-text :nodes="formatContent(article.content)" />
-      </view>
-
-      <!-- GitHub项目链接 -->
-      <view v-if="article.article_type === 'github_project'" class="github-link">
-        <button class="link-btn" @tap="openGitHub">
-          在GitHub中查看
-        </button>
       </view>
     </view>
   </view>
@@ -313,10 +299,18 @@ const formatNumber = (num: number) => {
   return num.toString()
 }
 
-// 格式化日期
+// 格式化日期 - 简单的年月日格式
 const formatDate = (dateStr: string) => {
+  if (!dateStr) return '未知时间'
+
   const date = new Date(dateStr)
-  return date.toLocaleDateString()
+  if (isNaN(date.getTime())) return '时间格式错误'
+
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
 }
 
 // 获取详情页标签
