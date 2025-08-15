@@ -105,8 +105,7 @@ npm run build:h5
 在 `src/utils/request.ts` 中修改 `BASE_URL`：
 
 ```typescript
-const BASE_URL = 'http://localhost:7001'  // 开发环境
-// const BASE_URL = 'https://your-api.com'  // 生产环境
+const BASE_URL = 'https://ai.zjkdongao.cn'  // 生产环境
 ```
 
 ### 小程序配置

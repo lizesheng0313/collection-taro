@@ -1,7 +1,7 @@
 import Taro from '@tarojs/taro'
 
 // 基础配置
-const BASE_URL = 'http://localhost:7001'
+const BASE_URL = 'https://ai.zjkdongao.cn'
 
 interface RequestOptions {
   url: string
