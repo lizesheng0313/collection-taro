@@ -5,7 +5,7 @@ export default {
   ],
   window: {
     backgroundTextStyle: 'light',
-    navigationBarBackgroundColor: '#fff',
+    navigationBarBackgroundColor: '#ffffff',
     navigationBarTitleText: '肥猫猫博客',
     navigationBarTextStyle: 'black'
   }

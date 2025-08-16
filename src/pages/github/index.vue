@@ -3,8 +3,8 @@
     <!-- 筛选器 -->
     <view class="filter-bar">
       <view class="filter-tabs">
-        <view 
-          v-for="period in periods" 
+        <view
+          v-for="period in periods"
           :key="period.value"
           :class="['tab-item', { active: currentPeriod === period.value }]"
           @tap="changePeriod(period.value)"
@@ -16,18 +16,18 @@
 
     <!-- 项目列表 -->
     <view class="project-list">
-      <view v-if="loading" class="loading">
+      <view v-if="loading && projects.length === 0" class="loading">
         加载中...
       </view>
-      
+
       <view v-else-if="projects.length === 0" class="empty">
         <view class="empty-icon">🚀</view>
         <view class="empty-text">暂无GitHub项目</view>
       </view>
-      
+
       <view v-else>
-        <view 
-          v-for="project in projects" 
+        <view
+          v-for="project in projects"
           :key="project.id"
           class="project-card"
           @tap="goToDetail(project)"
@@ -42,7 +42,7 @@
           <view class="project-desc" v-if="project.translated_description || project.github_info?.translated_description">
             {{ project.translated_description || project.github_info?.translated_description }}
           </view>
-          
+
           <view class="project-stats">
             <view class="stat-item">
               <text class="stat-icon">⭐</text>
@@ -57,7 +57,7 @@
               <text class="stat-value">{{ project.read_count || 0 }}</text>
             </view>
           </view>
-          
+
           <view class="project-tags" v-if="getTopics(project).length">
             <text
               v-for="topic in getTopics(project).slice(0, 3)"
@@ -73,19 +73,23 @@
             <text class="time-text">{{ formatDate(project.collect_time) }}</text>
           </view>
         </view>
-      </view>
-    </view>
 
-    <!-- 加载更多 -->
-    <view v-if="hasMore && !loading" class="load-more" @tap="loadMore">
-      加载更多
+        <!-- 加载更多提示 -->
+        <view v-if="loading" class="loading-more">
+          正在加载更多...
+        </view>
+
+        <view v-else-if="!hasMore && projects.length > 0" class="no-more">
+          没有更多内容了
+        </view>
+      </view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import Taro from '@tarojs/taro'
+import Taro, { useShareAppMessage, useReachBottom } from '@tarojs/taro'
 import { getGitHubProjects, type Article } from '../../api/index'
 
 const projects = ref<Article[]>([])
@@ -143,10 +147,12 @@ const changePeriod = (period: 'daily' | 'weekly' | 'monthly') => {
   loadProjects()
 }
 
-// 加载更多
-const loadMore = () => {
-  loadProjects(true)
-}
+// 使用页面的触底事件
+useReachBottom(() => {
+  if (hasMore.value && !loading.value) {
+    loadProjects(true)
+  }
+})
 
 // 跳转到详情页
 const goToDetail = (project: Article) => {
@@ -191,28 +197,42 @@ const formatDate = (dateStr: string) => {
   })
 }
 
+// 配置微信自带分享功能
+useShareAppMessage(() => {
+  return {
+    title: '肥猫猫博客 - 发现优质GitHub项目',
+    path: '/pages/github/index',
+    imageUrl: '' // 可以设置分享图片
+  }
+})
+
 onMounted(() => {
   loadProjects()
+
+  // 显示分享按钮
+  Taro.showShareMenu({
+    withShareTicket: true
+  })
 })
 </script>
 
 <style lang="scss">
 .github-page {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: #ffffff;
 }
 
 .filter-bar {
   background: white;
   padding: 20px;
   border-bottom: 1px solid #eee;
-  
+
   .filter-tabs {
     display: flex;
     background: #f8f9fa;
     border-radius: 12px;
     padding: 6px;
-    
+
     .tab-item {
       flex: 1;
       text-align: center;
@@ -221,7 +241,7 @@ onMounted(() => {
       color: #666;
       border-radius: 8px;
       transition: all 0.3s;
-      
+
       &.active {
         background: #007aff;
         color: white;
@@ -325,18 +345,25 @@ onMounted(() => {
   }
 }
 
-.load-more {
-  text-align: center;
-  padding: 32px;
-  color: #007aff;
-  font-size: 28px;
-}
-
 .loading {
   text-align: center;
   padding: 80px;
   color: #999;
   font-size: 28px;
+}
+
+.loading-more {
+  text-align: center;
+  padding: 32px;
+  color: #999;
+  font-size: 26px;
+}
+
+.no-more {
+  text-align: center;
+  padding: 32px;
+  color: #ccc;
+  font-size: 24px;
 }
 
 .empty {

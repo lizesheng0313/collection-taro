@@ -170,7 +170,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import Taro, { getCurrentInstance, useLoad } from '@tarojs/taro'
+import Taro, { getCurrentInstance, useLoad, useShareAppMessage } from '@tarojs/taro'
 import { getArticleDetail, getGitHubProjectDetail, type Article } from '../../api/index'
 
 const article = ref<Article | null>(null)
@@ -350,19 +350,46 @@ const openGitHub = () => {
   }
 }
 
+// 配置微信自带分享功能
+useShareAppMessage(() => {
+  if (!article.value) {
+    return {
+      title: '肥猫猫博客',
+      path: '/pages/github/index'
+    }
+  }
+
+  const title = article.value.title.length > 30
+    ? article.value.title.substring(0, 30) + '...'
+    : article.value.title
+
+  const path = params.type === 'github_project' && params.fullName
+    ? `/pages/detail/index?fullName=${encodeURIComponent(params.fullName)}&type=github_project`
+    : `/pages/detail/index?id=${params.id}`
+
+  return {
+    title: `${title} - 肥猫猫博客`,
+    path: path,
+    imageUrl: '' // 可以设置分享图片
+  }
+})
+
 useLoad(() => {
   loadArticle()
 })
 
 onMounted(() => {
-  // 组件挂载完成
+  // 显示分享按钮
+  Taro.showShareMenu({
+    withShareTicket: true
+  })
 })
 </script>
 
 <style lang="scss">
 .detail-page {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: #ffffff;
 }
 
 /* 项目介绍样式 */
@@ -585,7 +612,7 @@ onMounted(() => {
   padding: 40px 32px 32px;
   border-bottom: 1px solid #eee;
   margin-top: 20rpx;
-  
+
   .article-title {
     font-size: 36px;
     font-weight: 600;
