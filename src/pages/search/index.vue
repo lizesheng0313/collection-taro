@@ -60,16 +60,31 @@
     </view>
 
     <!-- 搜索结果 -->
-    <view v-if="hasSearched" class="search-results">
+    <scroll-view
+      v-if="hasSearched"
+      class="search-results"
+      scroll-y
+      enable-back-to-top
+      refresher-enabled
+      :refresher-triggered="refreshing"
+      @refresherrefresh="onRefresh"
+      @scrolltolower="onLoadMore"
+      lower-threshold="100"
+    >
       <view class="results-header">
         <text class="results-count">找到 {{ totalCount }} 个结果</text>
       </view>
 
-      <view v-if="loading && results.length === 0" class="loading">
+
+
+
+
+
+      <view v-if="loading" class="loading">
         搜索中...
       </view>
 
-      <view v-else-if="results.length === 0" class="empty">
+      <view v-else-if="hasSearched && results.length === 0" class="empty">
         <view class="empty-icon">
           <view class="icon-search-empty"></view>
         </view>
@@ -118,14 +133,14 @@
         </view>
       </view>
 
-      <!-- 加载更多 -->
-      <view v-if="hasMore && !loading" class="load-more" @tap="loadMore">
-        点击加载更多
-      </view>
+      <!-- 加载更多提示 -->
       <view v-if="loading && results.length > 0" class="loading-more">
         加载中...
       </view>
-    </view>
+      <view v-if="!hasMore && results.length > 0" class="no-more">
+        没有更多了
+      </view>
+    </scroll-view>
   </view>
 </template>
 
@@ -138,6 +153,7 @@ const searchKeyword = ref('')
 const hasSearched = ref(false)
 const results = ref<Article[]>([])
 const loading = ref(false)
+const refreshing = ref(false)
 const hasMore = ref(true)
 const page = ref(1)
 const pageSize = 10
@@ -160,7 +176,8 @@ const onInput = (e: any) => {
   searchKeyword.value = e.detail.value
 
   // 如果输入框被清空，清除搜索结果
-  if (!searchKeyword.value.trim()) {
+  // 但只有在用户主动清空时才清除，避免在搜索过程中误清除
+  if (!searchKeyword.value.trim() && hasSearched.value) {
     clearSearch()
   }
 }
@@ -240,17 +257,32 @@ const clearSearch = () => {
   hasMore.value = true
 }
 
+// 下拉刷新
+const onRefresh = async () => {
+  if (!searchKeyword.value.trim() || loading.value) return
+
+  refreshing.value = true
+  try {
+    page.value = 1
+    hasMore.value = true
+    await handleSearch()
+  } finally {
+    refreshing.value = false
+  }
+}
+
+// 自动加载更多
+const onLoadMore = () => {
+  if (!hasMore.value || loading.value || !searchKeyword.value.trim()) return
+  handleSearch(true)
+}
+
 // 返回
 const goBack = () => {
   Taro.navigateBack()
 }
 
-// 加载更多
-const loadMore = () => {
-  if (hasMore.value && !loading.value) {
-    handleSearch(true)
-  }
-}
+
 
 // 跳转到详情页
 const goToDetail = (article: Article) => {
@@ -536,6 +568,8 @@ onMounted(() => {
 
 .search-results {
   margin-top: 20rpx;
+  height: calc(100vh - 140rpx); // 减去搜索栏高度
+  overflow: hidden;
   
   .results-header {
     background-color: #fff;
@@ -773,16 +807,15 @@ onMounted(() => {
   }
 }
 
-.load-more, .loading-more {
+.loading-more, .no-more {
   text-align: center;
   padding: 40rpx 0;
-  color: #007aff;
   font-size: 28rpx;
   background-color: #fff;
-  margin-top: 20rpx;
+  color: #999;
 }
 
-.loading-more {
-  color: #999;
+.no-more {
+  color: #ccc;
 }
 </style>
