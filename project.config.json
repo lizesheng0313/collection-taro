@@ -2,7 +2,7 @@
   "miniprogramRoot": "dist/",
   "projectname": "collection-taro",
   "description": "简约博客小程序",
-  "appid": "touristappid",
+  "appid": "wxee8812cef3046b13",
   "setting": {
     "urlCheck": false,
     "es6": false,

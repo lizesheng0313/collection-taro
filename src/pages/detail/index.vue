@@ -12,7 +12,14 @@
     <view v-else class="article-content">
       <!-- 文章头部 -->
       <view class="article-header">
-        <view class="article-title">{{ article.title }}</view>
+        <view class="title-row">
+          <view class="article-title">{{ article.title }}</view>
+          <view class="favorite-btn" :class="{ favorited: isFavorited }" @tap="toggleFavorite">
+            <view class="favorite-icon">
+              <view class="icon-heart" :class="{ filled: isFavorited }"></view>
+            </view>
+          </view>
+        </view>
         
         <!-- GitHub项目信息 -->
         <view v-if="article.article_type === 'github_project'" class="github-info">
@@ -171,10 +178,12 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import Taro, { getCurrentInstance, useLoad, useShareAppMessage } from '@tarojs/taro'
-import { getArticleDetail, getGitHubProjectDetail, type Article } from '../../api/index'
+import { getArticleDetail, getGitHubProjectDetail, addFavorite, removeFavorite, checkFavorite, type Article } from '../../api/index'
 
 const article = ref<Article | null>(null)
 const loading = ref(false)
+const isFavorited = ref(false)
+const favoriteLoading = ref(false)
 
 // 解析商业价值分析数据
 const businessAnalysis = computed(() => {
@@ -223,7 +232,7 @@ const loadArticle = async () => {
   try {
     let response
     
-    if (params.type === 'github_project' && params.fullName) {
+    if ((params.type === 'github' || params.type === 'github_project') && params.fullName) {
       // GitHub项目详情
       response = await getGitHubProjectDetail(decodeURIComponent(params.fullName))
     } else if (params.id) {
@@ -238,10 +247,13 @@ const loadArticle = async () => {
     // 设置页面标题
     if (article.value) {
       Taro.setNavigationBarTitle({
-        title: article.value.title.length > 20 
-          ? article.value.title.substring(0, 20) + '...' 
+        title: article.value.title.length > 20
+          ? article.value.title.substring(0, 20) + '...'
           : article.value.title
       })
+
+      // 检查收藏状态
+      checkFavoriteStatus()
     }
   } catch (error) {
     console.error('加载文章失败:', error)
@@ -251,6 +263,74 @@ const loadArticle = async () => {
     })
   } finally {
     loading.value = false
+  }
+}
+
+// 检查收藏状态
+const checkFavoriteStatus = async () => {
+  if (!article.value) return
+
+  try {
+    const token = Taro.getStorageSync('token')
+    if (!token) {
+      isFavorited.value = false
+      return
+    }
+
+    const response = await checkFavorite(article.value.id)
+    isFavorited.value = response.data.isFavorited
+  } catch (error) {
+    console.error('检查收藏状态失败:', error)
+    isFavorited.value = false
+  }
+}
+
+// 切换收藏状态
+const toggleFavorite = async () => {
+  if (!article.value) return
+
+  const token = Taro.getStorageSync('token')
+  if (!token) {
+    Taro.showToast({
+      title: '请先登录',
+      icon: 'none'
+    })
+    return
+  }
+
+  if (favoriteLoading.value) return
+  favoriteLoading.value = true
+
+  try {
+    if (isFavorited.value) {
+      // 取消收藏
+      await removeFavorite({ articleId: article.value.id })
+      isFavorited.value = false
+      Taro.showToast({
+        title: '已取消收藏',
+        icon: 'success'
+      })
+    } else {
+      // 添加收藏
+      await addFavorite({
+        articleId: article.value.id,
+        articleType: article.value.article_type
+      })
+      isFavorited.value = true
+      Taro.showToast({
+        title: '收藏成功',
+        icon: 'success'
+      })
+    }
+  } catch (error: any) {
+    console.error('收藏操作失败:', error)
+    const errorMessage = error?.message || '操作失败'
+    Taro.showToast({
+      title: errorMessage,
+      icon: 'none'
+    })
+  } finally {
+    favoriteLoading.value = false
   }
 }
 
@@ -379,10 +459,7 @@ useLoad(() => {
 })
 
 onMounted(() => {
-  // 显示分享按钮
-  Taro.showShareMenu({
-    withShareTicket: true
-  })
+  // 页面加载完成
 })
 </script>
 
@@ -613,12 +690,86 @@ onMounted(() => {
   border-bottom: 1px solid #eee;
   margin-top: 20rpx;
 
+  .title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+
   .article-title {
+    flex: 1;
     font-size: 36px;
     font-weight: 600;
     color: #333;
     line-height: 1.4;
-    margin-bottom: 24px;
+    margin-right: 20px;
+  }
+
+  .favorite-btn {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 50%;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+
+    &.favorited {
+      background: #007aff;
+      border-color: #007aff;
+      transform: scale(1.1);
+    }
+
+    &:active {
+      transform: scale(0.9);
+    }
+
+    .favorite-icon {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .icon-heart {
+        width: 20px;
+        height: 18px;
+        position: relative;
+        transition: all 0.3s ease;
+
+        &::before,
+        &::after {
+          content: '';
+          position: absolute;
+          width: 10px;
+          height: 14px;
+          border: 2px solid #666;
+          border-radius: 10px 10px 0 0;
+          transform: rotate(-45deg);
+          transform-origin: 0 100%;
+          transition: all 0.3s ease;
+        }
+
+        &::after {
+          left: 8px;
+          transform: rotate(45deg);
+          transform-origin: 100% 100%;
+        }
+
+        &.filled {
+          &::before,
+          &::after {
+            background: white;
+            border-color: white;
+          }
+        }
+      }
+    }
   }
   
   .github-info {

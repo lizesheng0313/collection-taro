@@ -1,4 +1,5 @@
 import request from '../utils/request'
+import Taro from '@tarojs/taro'
 
 // 文章相关接口
 export interface Article {
@@ -84,4 +85,148 @@ export const getGitHubProjectDetail = (fullName: string) => {
     url: `/api/articles/github/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`,
     method: 'GET'
   })
+}
+
+// 搜索文章和项目
+export const searchArticles = (params: {
+  keyword: string
+  page?: number
+  pageSize?: number
+  article_type?: string
+}) => {
+  return request<PaginationResult<Article>>({
+    url: '/api/articles/search',
+    method: 'GET',
+    data: params
+  })
+}
+
+// 小程序用户相关接口
+export interface LoginParams {
+  code: string
+  source?: string
+}
+
+export interface UserInfo {
+  id: number
+  openid: string
+  unionid?: string
+  nickName?: string
+  avatarUrl?: string
+  gender?: number
+  city?: string
+  province?: string
+  country?: string
+  language?: string
+  source: string
+  create_time: number
+  update_time: number
+}
+
+export interface LoginResult {
+  userInfo: UserInfo
+  openid: string
+  unionid?: string
+  token: string
+  session_key?: string
+}
+
+// 微信登录
+export const login = (params: LoginParams) => {
+  return request<LoginResult>({
+    url: '/api/miniprogram/login',
+    method: 'POST',
+    data: params
+  })
+}
+
+// 更新用户信息
+export const updateUserInfo = (userInfo: Partial<UserInfo>) => {
+  return request({
+    url: '/api/miniprogram/updateUserInfo',
+    method: 'POST',
+    data: userInfo,
+    header: {
+      authorization: getToken()
+    }
+  })
+}
+
+// 获取用户信息
+export const getUserInfo = () => {
+  return request<UserInfo>({
+    url: '/api/miniprogram/userInfo',
+    method: 'GET',
+    header: {
+      authorization: getToken()
+    }
+  })
+}
+
+// 添加收藏
+export const addFavorite = (params: {
+  articleId: number
+  articleType: 'blog' | 'github_project'
+}) => {
+  return request({
+    url: '/api/miniprogram/addFavorite',
+    method: 'POST',
+    data: params,
+    header: {
+      authorization: getToken()
+    }
+  })
+}
+
+// 取消收藏
+export const removeFavorite = (params: {
+  articleId: number
+}) => {
+  return request({
+    url: '/api/miniprogram/removeFavorite',
+    method: 'POST',
+    data: params,
+    header: {
+      authorization: getToken()
+    }
+  })
+}
+
+// 获取收藏列表
+export const getFavorites = (params: {
+  page?: number
+  pageSize?: number
+  articleType?: 'blog' | 'github_project'
+}) => {
+  return request<PaginationResult<Article>>({
+    url: '/api/miniprogram/favorites',
+    method: 'GET',
+    data: params,
+    header: {
+      authorization: getToken()
+    }
+  })
+}
+
+// 检查是否已收藏
+export const checkFavorite = (articleId: number) => {
+  return request<{
+    isFavorited: boolean
+    favoriteTime?: number
+  }>({
+    url: `/api/miniprogram/checkFavorite/${articleId}`,
+    method: 'GET',
+    header: {
+      authorization: getToken()
+    }
+  })
+}
+
+// 获取token的辅助函数
+const getToken = () => {
+  try {
+    return Taro.getStorageSync('token') || ''
+  } catch (error) {
+    return ''
+  }
 }

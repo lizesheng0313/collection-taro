@@ -1,7 +1,8 @@
 import Taro from '@tarojs/taro'
+import { API_CONFIG } from '../config/api'
 
 // 基础配置
-const BASE_URL = 'https://ai.zjkdongao.cn'
+const BASE_URL = API_CONFIG.BASE_URL
 
 interface RequestOptions {
   url: string
