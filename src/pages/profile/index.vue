@@ -45,8 +45,6 @@
               <text>GitHub项目探索者</text>
             </view>
           </view>
-
-
         </view>
 
         <!-- 统计信息 -->
@@ -68,6 +66,24 @@
     <view class="menu-section">
       <view class="menu-group">
         <view class="group-title">更多</view>
+        
+        <!-- AI编辑器白嫖群 -->
+        <view class="menu-item" @tap="goToAIGroup">
+          <view class="menu-icon-wrapper">
+            <view class="menu-icon ai-icon">
+              <view class="icon-ai">🤖</view>
+            </view>
+          </view>
+          <view class="menu-content">
+            <view class="menu-title">加入AI编辑器白嫖群</view>
+            <view class="menu-desc">观看广告获取群二维码</view>
+          </view>
+          <view class="menu-arrow">
+            <view class="icon-arrow-right"></view>
+          </view>
+        </view>
+        
+        <!-- 关于我们 -->
         <view class="menu-item" @tap="showAbout">
           <view class="menu-icon-wrapper">
             <view class="menu-icon">
@@ -90,8 +106,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import Taro, { useDidShow } from '@tarojs/taro'
-import { getUserInfo, getFavorites, type UserInfo } from '../../api/index'
-import { API_URLS } from '../../config/api'
+import { getUserInfo, getFavorites, manualLogin, validateToken, type UserInfo } from '../../api/index'
 
 const isLoggedIn = ref(false)
 const userInfo = ref<UserInfo | null>(null)
@@ -107,8 +122,9 @@ const checkLoginStatus = async () => {
   }
 
   try {
-    const response = await getUserInfo()
-    if (response.success) {
+    const isValid = await validateToken()
+    if (isValid) {
+      const response = await getUserInfo()
       isLoggedIn.value = true
       userInfo.value = response.data
       // 加载收藏数量
@@ -121,7 +137,6 @@ const checkLoginStatus = async () => {
       Taro.removeStorageSync('userInfo')
     }
   } catch (error) {
-    console.error('获取用户信息失败:', error)
     isLoggedIn.value = false
     Taro.removeStorageSync('token')
     Taro.removeStorageSync('userInfo')
@@ -131,58 +146,27 @@ const checkLoginStatus = async () => {
 // 微信登录
 const handleLogin = async () => {
   try {
-    // 1. 获取微信登录code
-    const res = await Taro.login()
-    if (!res.code) {
-      Taro.showToast({
-        title: '获取登录凭证失败',
-        icon: 'none'
-      })
-      return
-    }
+    const loginData = await manualLogin()
 
-    // 2. 调用后端登录接口
-    const response = await Taro.request({
-      url: API_URLS.LOGIN,
-      method: 'POST',
-      data: {
-        code: res.code,
-        source: 'weapp'
-      }
-    })
+    isLoggedIn.value = true
+    userInfo.value = loginData.userInfo
 
-    if (response.data.success) {
-      // 存储token和用户信息
-      Taro.setStorageSync('token', response.data.data.token)
-      Taro.setStorageSync('userInfo', response.data.data.userInfo)
+    // 加载收藏数量
+    loadFavoriteCount()
+    // 计算使用天数
+    calculateDaysSinceJoin()
 
-      isLoggedIn.value = true
-      userInfo.value = response.data.data.userInfo
-
-      // 加载收藏数量
-      loadFavoriteCount()
-      // 计算使用天数
-      calculateDaysSinceJoin()
-
-      Taro.showToast({
-        title: '登录成功',
-        icon: 'success'
-      })
-    } else {
-      Taro.showToast({
-        title: response.data.message || '登录失败',
-        icon: 'none'
-      })
-    }
-  } catch (error) {
     Taro.showToast({
-      title: '登录失败，请重试',
+      title: '登录成功',
+      icon: 'success'
+    })
+  } catch (error: any) {
+    Taro.showToast({
+      title: error.message || '登录失败，请重试',
       icon: 'none'
     })
   }
 }
-
-
 
 // 加载收藏数量
 const loadFavoriteCount = async () => {
@@ -202,7 +186,7 @@ const loadFavoriteCount = async () => {
 // 计算使用天数
 const calculateDaysSinceJoin = () => {
   if (userInfo.value?.create_time) {
-    const joinDate = new Date(userInfo.value.create_time * 1000) // 时间戳转换
+    const joinDate = new Date(userInfo.value.create_time) // 后端存储的已经是毫秒时间戳，不需要乘以1000
     const today = new Date()
     const diffTime = today.getTime() - joinDate.getTime() // 当前时间 - 注册时间
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) // 向下取整
@@ -212,10 +196,10 @@ const calculateDaysSinceJoin = () => {
   }
 }
 
-// 跳转到收藏页面
-const goToFavorites = () => {
+// 跳转到AI编辑器白嫖群页面
+const goToAIGroup = () => {
   Taro.navigateTo({
-    url: '/pages/favorites/index'
+    url: '/pages/ai-group/index'
   })
 }
 
@@ -259,122 +243,146 @@ onMounted(() => {
   text-align: center;
 
   .avatar-container {
+    position: relative;
+    display: inline-block;
     margin-bottom: 32px;
 
     .avatar-placeholder {
-      width: 80px;
-      height: 80px;
-      background: #007aff;
+      width: 120px;
+      height: 120px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto;
+      position: relative;
+      z-index: 2;
 
       .avatar-icon {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
         .icon-user {
-          width: 24px;
-          height: 24px;
-          border: 2px solid white;
-          border-radius: 50% 50% 0 0;
+          width: 60px;
+          height: 60px;
+          background: white;
+          border-radius: 50%;
           position: relative;
 
           &::before {
             content: '';
             position: absolute;
-            width: 12px;
-            height: 12px;
-            border: 2px solid white;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 24px;
+            background: #667eea;
             border-radius: 50%;
-            top: -8px;
-            left: 3px;
           }
 
           &::after {
             content: '';
             position: absolute;
-            width: 32px;
-            height: 16px;
-            border: 2px solid white;
-            border-radius: 50px 50px 0 0;
-            top: 16px;
-            left: -6px;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 20px 20px 0 0;
           }
         }
       }
+    }
+
+    .avatar-ring {
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      right: -8px;
+      bottom: -8px;
+      border: 3px solid rgba(102, 126, 234, 0.3);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
     }
   }
 
   .login-content {
     .welcome-text {
-      margin-bottom: 16px;
+      margin-bottom: 24px;
 
       .login-title {
         font-size: 32px;
         color: #666;
-        margin-bottom: 4px;
+        margin-bottom: 8px;
       }
 
       .app-name {
-        font-size: 36px;
-        font-weight: 600;
-        color: #333;
+        font-size: 48px;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
       }
     }
 
     .login-subtitle {
       font-size: 28px;
-      color: #666;
-      margin-bottom: 40px;
+      color: #999;
+      margin-bottom: 48px;
       line-height: 1.5;
     }
 
     .login-btn {
-      background: #007aff;
+      width: 100%;
+      background: linear-gradient(135deg, #07c160, #06ad56);
       color: white;
       border: none;
       border-radius: 50px;
-      padding: 0;
+      padding: 32px;
       font-size: 32px;
-      font-weight: 500;
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(7, 193, 96, 0.4);
       transition: all 0.3s ease;
-
-      &:active {
-        background: #0056d3;
-      }
 
       .btn-content {
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 20px 48px;
 
         .wechat-icon {
-          font-size: 28px;
+          font-size: 36px;
           margin-right: 12px;
         }
+      }
 
-        .login-btn-text {
-          color: white;
-        }
+      &:active {
+        transform: translateY(2px);
+        box-shadow: 0 2px 8px rgba(7, 193, 96, 0.4);
       }
     }
   }
 }
 
-.user-section {
-  padding: 0;
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
 
+.user-section {
   .user-header {
-    padding: 32px;
     display: flex;
     align-items: center;
+    padding: 32px;
     border-bottom: 1px solid #f0f0f0;
 
     .user-avatar {
@@ -382,58 +390,51 @@ onMounted(() => {
       margin-right: 24px;
 
       .avatar-img {
-        width: 72px;
-        height: 72px;
+        width: 80px;
+        height: 80px;
         border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border: 3px solid #f0f0f0;
       }
 
       .avatar-placeholder {
-        width: 72px;
-        height: 72px;
-        background: #007aff;
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        border: 3px solid white;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 
         .avatar-icon {
-          width: 36px;
-          height: 36px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
           .icon-user {
-            width: 22px;
-            height: 22px;
-            border: 2px solid white;
-            border-radius: 50% 50% 0 0;
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 50%;
             position: relative;
 
             &::before {
               content: '';
               position: absolute;
-              width: 10px;
-              height: 10px;
-              border: 2px solid white;
+              top: 8px;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 16px;
+              height: 16px;
+              background: #667eea;
               border-radius: 50%;
-              top: -7px;
-              left: 3px;
             }
 
             &::after {
               content: '';
               position: absolute;
+              bottom: 4px;
+              left: 50%;
+              transform: translateX(-50%);
               width: 28px;
               height: 14px;
-              border: 2px solid white;
-              border-radius: 50px 50px 0 0;
-              top: 14px;
-              left: -5px;
+              background: #667eea;
+              border-radius: 14px 14px 0 0;
             }
           }
         }
@@ -472,22 +473,6 @@ onMounted(() => {
           margin-right: 8px;
           font-size: 16px;
         }
-      }
-    }
-
-    .logout-btn {
-      background: #f8f9fa;
-      border: 1px solid #e9ecef;
-      border-radius: 20px;
-      padding: 12px 20px;
-
-      .logout-text {
-        font-size: 28px;
-        color: #666;
-      }
-
-      &:active {
-        background: #e9ecef;
       }
     }
   }
@@ -545,10 +530,10 @@ onMounted(() => {
 }
 
 .menu-item {
-  padding: 24px;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 24px;
+  border-bottom: 1px solid #f8f9fa;
   transition: all 0.3s ease;
 
   &:last-child {
@@ -560,73 +545,28 @@ onMounted(() => {
   }
 
   .menu-icon-wrapper {
-    width: 56px;
-    height: 56px;
-    background: #007aff;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     margin-right: 20px;
 
     .menu-icon {
-      width: 24px;
-      height: 24px;
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #007aff, #0056d3);
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
 
-      .icon-heart-outline {
-        width: 20px;
-        height: 18px;
-        position: relative;
-
-        &::before,
-        &::after {
-          content: '';
-          position: absolute;
-          width: 10px;
-          height: 14px;
-          border: 2px solid white;
-          border-radius: 10px 10px 0 0;
-          transform: rotate(-45deg);
-          transform-origin: 0 100%;
-        }
-
-        &::after {
-          left: 8px;
-          transform: rotate(45deg);
-          transform-origin: 100% 100%;
-        }
+      &.ai-icon {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a24);
       }
 
-      .icon-info {
-        width: 20px;
-        height: 20px;
-        border: 2px solid white;
-        border-radius: 50%;
-        position: relative;
+      .icon-info, .icon-ai {
+        font-size: 24px;
+        color: white;
+      }
 
-        &::before {
-          content: '';
-          position: absolute;
-          width: 2px;
-          height: 8px;
-          background: white;
-          left: 7px;
-          top: 8px;
-        }
-
-        &::after {
-          content: '';
-          position: absolute;
-          width: 2px;
-          height: 2px;
-          background: white;
-          border-radius: 50%;
-          left: 7px;
-          top: 4px;
-        }
+      .icon-info::before {
+        content: 'ℹ️';
       }
     }
   }
@@ -636,33 +576,25 @@ onMounted(() => {
 
     .menu-title {
       font-size: 32px;
-      font-weight: 600;
+      font-weight: 500;
       color: #333;
       margin-bottom: 4px;
     }
 
     .menu-desc {
-      font-size: 26px;
-      color: #666;
+      font-size: 24px;
+      color: #999;
     }
   }
 
   .menu-arrow {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
     .icon-arrow-right {
-      width: 8px;
-      height: 8px;
-      border-top: 2px solid #ccc;
-      border-right: 2px solid #ccc;
-      transform: rotate(45deg);
+      width: 0;
+      height: 0;
+      border-left: 8px solid #ccc;
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid transparent;
     }
   }
 }
-
-
 </style>

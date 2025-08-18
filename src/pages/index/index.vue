@@ -40,9 +40,9 @@
           </view>
 
           <view class="project-stats">
-            <view class="stat-item" v-if="project.programming_language">
-              <text class="stat-icon">💻</text>
-              <text>{{ project.programming_language }}</text>
+            <view class="stat-item" v-if="project.read_count">
+              <text class="stat-icon">👁️</text>
+              <text>{{ project.read_count }}</text>
             </view>
             <view class="stat-item" v-if="project.forks_count">
               <text class="stat-icon">🍴</text>

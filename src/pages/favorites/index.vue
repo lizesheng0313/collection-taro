@@ -59,11 +59,11 @@
               </view>
               <view class="stat-value">{{ formatNumber(item.stars_count) }}</view>
             </view>
-            <view class="stat-item" v-if="item.programming_language">
+            <view class="stat-item" v-if="item.read_count">
               <view class="stat-icon">
-                <view class="icon-code"></view>
+                <view class="icon-eye"></view>
               </view>
-              <view class="stat-value">{{ item.programming_language }}</view>
+              <view class="stat-value">{{ formatNumber(item.read_count) }}</view>
             </view>
             <view class="stat-item" v-if="item.forks_count">
               <view class="stat-icon">
@@ -483,6 +483,36 @@ onMounted(() => {
             background: #666;
             left: 4px;
             top: 6px;
+          }
+        }
+
+        .icon-eye {
+          width: 16px;
+          height: 12px;
+          position: relative;
+          background: #666;
+          border-radius: 8px;
+
+          &::before {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            left: 5px;
+            top: 3px;
+          }
+
+          &::after {
+            content: '';
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #666;
+            border-radius: 50%;
+            left: 6.5px;
+            top: 4.5px;
           }
         }
       }

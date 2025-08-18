@@ -230,3 +230,83 @@ const getToken = () => {
     return ''
   }
 }
+
+// 验证token是否有效
+export const validateToken = async () => {
+  const token = getToken()
+  if (!token) return false
+
+  try {
+    const response = await getUserInfo()
+    return response.success
+  } catch (error) {
+    return false
+  }
+}
+
+// 自动登录函数
+export const autoLogin = async () => {
+  try {
+    // 检查是否已有token
+    const token = getToken()
+    if (token) {
+      // 如果有token，验证是否有效
+      const isValid = await validateToken()
+      if (isValid) {
+        return true // token有效
+      } else {
+        // token无效，清除本地存储
+        Taro.removeStorageSync('token')
+        Taro.removeStorageSync('userInfo')
+      }
+    }
+
+    // 如果没有有效token，尝试自动登录
+    const loginRes = await Taro.login()
+    if (loginRes.code) {
+      const response = await login({
+        code: loginRes.code,
+        source: 'weapp'
+      })
+
+      if (response.success) {
+        // 自动登录成功，存储token和用户信息
+        Taro.setStorageSync('token', response.data.token)
+        Taro.setStorageSync('userInfo', response.data.userInfo)
+        return true
+      }
+    }
+    return false
+  } catch (error) {
+    // 自动登录失败
+    return false
+  }
+}
+
+// 手动登录函数
+export const manualLogin = async () => {
+  try {
+    // 1. 获取微信登录code
+    const res = await Taro.login()
+    if (!res.code) {
+      throw new Error('获取登录凭证失败')
+    }
+
+    // 2. 调用后端登录接口
+    const response = await login({
+      code: res.code,
+      source: 'weapp'
+    })
+
+    if (response.success) {
+      // 存储token和用户信息
+      Taro.setStorageSync('token', response.data.token)
+      Taro.setStorageSync('userInfo', response.data.userInfo)
+      return response.data
+    } else {
+      throw new Error(response.message || '登录失败')
+    }
+  } catch (error) {
+    throw error
+  }
+}

@@ -178,6 +178,45 @@ page {
   }
 }
 
+/* 通用搜索框样式 */
+.search-bar {
+  padding: 20px;
+  background: white;
+  border-bottom: 1px solid #eee;
+
+  .search-input-wrapper {
+    display: flex;
+    align-items: center;
+    padding: 20px 24px;
+    background: #f8f9fa;
+    border-radius: 50px;
+    border: 1px solid #e9ecef;
+
+    .search-icon {
+      margin-right: 16px;
+      font-size: 20px;
+      color: #666;
+    }
+
+    .search-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 32px;
+      color: #333;
+
+      &::placeholder {
+        color: #666;
+      }
+    }
+
+    .search-placeholder {
+      color: #666;
+      font-size: 32px;
+    }
+  }
+}
+
 /* 通用间距 */
 .mt-10 { margin-top: 20rpx; }
 .mt-15 { margin-top: 30rpx; }

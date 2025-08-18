@@ -4,7 +4,8 @@ export default {
     'pages/search/index',
     'pages/favorites/index',
     'pages/profile/index',
-    'pages/detail/index'
+    'pages/detail/index',
+    'pages/ai-group/index'
   ],
   window: {
     backgroundTextStyle: 'light',

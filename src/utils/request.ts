@@ -1,8 +1,7 @@
 import Taro from '@tarojs/taro'
-import { API_CONFIG } from '../config/api'
 
 // 基础配置
-const BASE_URL = API_CONFIG.BASE_URL
+const BASE_URL = process.env.TARO_APP_API_BASE_URL || 'http://127.0.0.1:7003'
 
 interface RequestOptions {
   url: string
