@@ -167,7 +167,7 @@ const formatTime = (timeStr: string) => {
 // 页面分享
 useShareAppMessage(() => {
   return {
-    title: '肥猫猫博客 - 发现优质技术内容',
+    title: 'FMM博客 - 发现优质技术内容',
     path: '/pages/index/index'
   }
 })
@@ -187,6 +187,14 @@ const onPullDownRefresh = async () => {
 
 onMounted(() => {
   loadProjects()
+})
+
+// 分享功能
+useShareAppMessage(() => {
+  return {
+    title: 'FMM博客 - 发现优质技术内容',
+    path: '/pages/index/index'
+  }
 })
 
 // 页面生命周期函数会自动被Taro识别
@@ -255,6 +263,10 @@ onMounted(() => {
       color: #333;
       line-height: 1.4;
       margin-right: 16px;
+      word-wrap: break-word;
+      word-break: break-all;
+      overflow-wrap: break-word;
+      hyphens: auto;
     }
 
     .project-score {

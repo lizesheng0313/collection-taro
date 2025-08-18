@@ -1,5 +1,7 @@
 export default {
-  navigationBarTitleText: '肥猫猫博客',
+  navigationBarTitleText: 'FMM博客',
   enablePullDownRefresh: true,
-  onReachBottomDistance: 50
+  onReachBottomDistance: 50,
+  enableShareAppMessage: true,
+  enableShareTimeline: true
 }

@@ -434,8 +434,8 @@ const openGitHub = () => {
 useShareAppMessage(() => {
   if (!article.value) {
     return {
-      title: '肥猫猫博客',
-      path: '/pages/github/index'
+      title: 'FMM博客',
+      path: '/pages/index/index'
     }
   }
 
@@ -443,14 +443,19 @@ useShareAppMessage(() => {
     ? article.value.title.substring(0, 30) + '...'
     : article.value.title
 
-  const path = params.type === 'github_project' && params.fullName
-    ? `/pages/detail/index?fullName=${encodeURIComponent(params.fullName)}&type=github_project`
-    : `/pages/detail/index?id=${params.id}`
+  // 根据文章类型构建正确的分享路径
+  let path = ''
+  if (article.value.article_type === 'github_project' && article.value.github_full_name) {
+    path = `/pages/detail/index?fullName=${encodeURIComponent(article.value.github_full_name)}&type=github_project`
+  } else if (article.value.id) {
+    path = `/pages/detail/index?id=${article.value.id}`
+  } else {
+    path = '/pages/index/index'
+  }
 
   return {
-    title: `${title} - 肥猫猫博客`,
-    path: path,
-    imageUrl: '' // 可以设置分享图片
+    title: `${title} - FMM博客`,
+    path: path
   }
 })
 
@@ -480,7 +485,7 @@ onMounted(() => {
 }
 
 .project-intro .intro-title {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 600;
   color: #333;
   margin-bottom: 24rpx;
@@ -500,14 +505,14 @@ onMounted(() => {
 }
 
 .project-intro .section-title {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 600;
   color: #333;
   margin-bottom: 12rpx;
 }
 
 .project-intro .section-content {
-  font-size: 24px;
+  font-size: 28px;
   color: #333;
   line-height: 1.6;
 }
@@ -540,7 +545,7 @@ onMounted(() => {
 }
 
 .business-analysis .analysis-title {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 600;
   color: #333;
   margin-bottom: 24rpx;
@@ -560,14 +565,14 @@ onMounted(() => {
 }
 
 .business-analysis .section-title {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 600;
   color: #333;
   margin-bottom: 12rpx;
 }
 
 .business-analysis .section-content {
-  font-size: 24px;
+  font-size: 28px;
   color: #333;
   line-height: 1.6;
 }
@@ -589,7 +594,7 @@ onMounted(() => {
 }
 
 .business-analysis .idea-method {
-  font-size: 24rpx;
+  font-size: 28px;
   font-weight: 600;
   color: #333;
 }
@@ -597,7 +602,7 @@ onMounted(() => {
 .business-analysis .idea-difficulty {
   padding: 4rpx 12rpx;
   border-radius: 16rpx;
-  font-size: 20rpx;
+  font-size: 28px;
 }
 
 .business-analysis .difficulty-easy {
@@ -621,14 +626,14 @@ onMounted(() => {
 }
 
 .business-analysis .idea-description {
-  font-size: 22rpx;
+  font-size: 28px;
   color: #666;
   margin-bottom: 8rpx;
   line-height: 1.5;
 }
 
 .business-analysis .idea-price {
-  font-size: 22rpx;
+  font-size: 28px;
   color: #007aff;
   font-weight: 500;
 }
@@ -784,7 +789,7 @@ onMounted(() => {
         display: flex;
         align-items: center;
         margin-right: 32px;
-        font-size: 26px;
+        font-size: 28px;
         color: #666;
         
         .stat-icon {

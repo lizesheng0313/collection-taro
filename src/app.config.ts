@@ -5,12 +5,12 @@ export default {
     'pages/favorites/index',
     'pages/profile/index',
     'pages/detail/index',
-    'pages/ai-group/index'
+    'pages/qrcode/index'
   ],
   window: {
     backgroundTextStyle: 'light',
     navigationBarBackgroundColor: '#ffffff',
-    navigationBarTitleText: '肥猫猫博客',
+    navigationBarTitleText: 'FMM博客',
     navigationBarTextStyle: 'black'
   },
   tabBar: {

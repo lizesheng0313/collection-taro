@@ -1,6 +1,6 @@
 # Collection Taro 小程序
 
-基于 Taro Vue3 开发的简约博客小程序，用于展示肥猫猫博客的文章和 GitHub 项目。
+基于 Taro Vue3 开发的简约博客小程序，用于展示FMM博客的文章和 GitHub 项目。
 
 ## 功能特性
 

@@ -14,7 +14,7 @@
         <view class="login-content">
           <view class="welcome-text">
             <view class="login-title">欢迎来到</view>
-            <view class="app-name">肥猫猫项目分析</view>
+            <view class="app-name">FMM项目分析</view>
           </view>
           <view class="login-subtitle">发现优质开源项目，收藏你的最爱</view>
           <button class="login-btn" @tap="handleLogin">
@@ -76,7 +76,6 @@
           </view>
           <view class="menu-content">
             <view class="menu-title">加入AI编辑器白嫖群</view>
-            <view class="menu-desc">观看广告获取群二维码</view>
           </view>
           <view class="menu-arrow">
             <view class="icon-arrow-right"></view>
@@ -104,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import Taro, { useDidShow } from '@tarojs/taro'
 import { getUserInfo, getFavorites, manualLogin, validateToken, type UserInfo } from '../../api/index'
 
@@ -112,6 +111,12 @@ const isLoggedIn = ref(false)
 const userInfo = ref<UserInfo | null>(null)
 const favoriteCount = ref(0)
 const daysSinceJoin = ref(0)
+
+// AI群广告相关
+const showQRCode = ref(false)
+const loading = ref(false)
+const qrCodeImage = ref('/assets/images/wechat.png')
+let videoAd: any = null
 
 // 检查登录状态
 const checkLoginStatus = async () => {
@@ -196,17 +201,106 @@ const calculateDaysSinceJoin = () => {
   }
 }
 
-// 跳转到AI编辑器白嫖群页面
+// 初始化激励视频广告
+const initRewardedVideoAd = () => {
+  // 若在开发者工具中无法预览广告，请切换开发者工具中的基础库版本
+  if (wx.createRewardedVideoAd) {
+    videoAd = wx.createRewardedVideoAd({
+      adUnitId: 'adunit-1f3addeb7d7c3597'
+    })
+
+    videoAd.onLoad(() => {
+      console.log('激励视频广告加载成功')
+      loading.value = false
+    })
+
+    videoAd.onError((err: any) => {
+      console.error('激励视频广告加载失败', err)
+      loading.value = false
+      Taro.showToast({
+        title: '广告加载失败，请重试',
+        icon: 'none'
+      })
+    })
+
+    videoAd.onClose((res: any) => {
+      if (res && res.isEnded) {
+        // 用户观看完整广告，跳转到二维码页面
+        Taro.navigateTo({
+          url: '/pages/qrcode/index'
+        })
+        Taro.showToast({
+          title: '感谢观看！',
+          icon: 'success'
+        })
+      } else {
+        // 用户中途退出
+        Taro.showToast({
+          title: '请观看完整广告',
+          icon: 'none'
+        })
+      }
+    })
+  } else {
+    console.warn('当前环境不支持激励视频广告')
+    // 开发环境直接跳转到二维码页面
+    if (process.env.NODE_ENV === 'development') {
+      Taro.navigateTo({
+        url: '/pages/qrcode/index'
+      })
+    }
+  }
+}
+
+// 显示激励视频广告
+const showRewardedVideoAd = () => {
+  if (!videoAd) {
+    initRewardedVideoAd()
+    return
+  }
+
+  loading.value = true
+
+  videoAd.show().catch(() => {
+    // 失败重试
+    loading.value = true
+    videoAd.load()
+      .then(() => {
+        loading.value = false
+        return videoAd.show()
+      })
+      .catch((err: any) => {
+        console.error('激励视频广告显示失败', err)
+        loading.value = false
+        Taro.showToast({
+          title: '广告显示失败，请重试',
+          icon: 'none'
+        })
+      })
+  })
+}
+
+// 点击AI群菜单
 const goToAIGroup = () => {
-  Taro.navigateTo({
-    url: '/pages/ai-group/index'
+  console.log('点击了AI群菜单')
+
+  Taro.showModal({
+    title: '加入AI编辑器白嫖群',
+    content: '观看完整广告即可获取群二维码\n\n• 免费AI编辑器资源分享\n• 最新AI工具推荐\n• 技术交流与讨论',
+    confirmText: '观看广告',
+    cancelText: '取消',
+    success: (res) => {
+      if (res.confirm) {
+        showRewardedVideoAd()
+      }
+    }
   })
 }
 
 // 显示关于信息
 const showAbout = () => {
   Taro.showModal({
-    title: '关于肥猫猫博客',
+    title: '关于FMM博客',
     content: '一个专注于技术分享的博客平台，收录优质的技术文章和GitHub项目。',
     showCancel: false
   })
@@ -219,6 +313,13 @@ useDidShow(() => {
 
 onMounted(() => {
   checkLoginStatus()
+  initRewardedVideoAd()
+})
+
+onUnmounted(() => {
+  if (videoAd) {
+    videoAd.destroy()
+  }
 })
 </script>
 
@@ -334,7 +435,7 @@ onMounted(() => {
 
     .login-btn {
       width: 100%;
-      background: linear-gradient(135deg, #07c160, #06ad56);
+      background: linear-gradient(135deg, #007aff, #0056d3);
       color: white;
       border: none;
       border-radius: 50px;
@@ -446,7 +547,7 @@ onMounted(() => {
         right: 2px;
         width: 20px;
         height: 20px;
-        background: #52c41a;
+        background: #007aff;
         border: 3px solid white;
         border-radius: 50%;
       }
